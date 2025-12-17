@@ -12,8 +12,8 @@ module CSA(a, b, ci, sum, co);
     
     input [N-1:0] a;
     input [N-1:0] b;
-    input ci;
-    output [N-1:0] sum;
+    input ci;gjhjrtbnmiy
+    output [N-1:0] sum;1e
     output co;
     
     generate
