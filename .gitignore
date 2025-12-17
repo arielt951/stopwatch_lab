@@ -1,0 +1,31 @@
+# --- Vivado Generated Folders (Huge & Regeneratable) ---
+# Ignore simulation, synthesis, and implementation directories
+*.runs/
+*.sim/
+*.cache/
+*.hw/
+*.ip_user_files/
+.Xil/
+
+# --- Vivado Log & Journal Files ---
+# These change every time you click something in Vivado
+*.jou
+*.log
+*.str
+vivado*.backup.jou
+vivado*.backup.log
+
+# --- Simulation Outputs ---
+# Waveform databases and temporary simulation files
+*.wdb
+*.pb
+xsim.dir/
+
+# --- Implementation Outputs ---
+# You usually regenerate these, but uncomment if you want to save the final binary
+# *.bit
+# *.dcp
+
+# --- Operating System Junk ---
+Thumbs.db
+.DS_Store
