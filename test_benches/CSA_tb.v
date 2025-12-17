@@ -25,12 +25,11 @@ module CSA_tb();
     reg ci, correct, loop_was_skipped;
     wire [`WIDTH-1:0] sum;
     wire co;
-    
     integer ai,bi,cii;
     
     // Instantiate the UUT (Unit Under Test)
     CSA #(`WIDTH) uut (a, b, ci, sum, co);
-    
+
     initial begin
         correct = 1;
         loop_was_skipped = 1;
@@ -40,12 +39,17 @@ module CSA_tb();
             for( bi=0; bi<2**`WIDTH; bi=bi+1 ) begin
                 for( cii=0; cii<=1; cii=cii+1 ) begin
                     // FILL HERE :   a=...   b=....  
+                    a = ai;
+                    b = bi;
+                    ci = cii;
 		
 				    #5 
 					// FILL HERE :  correct = ....
-					
+                    if ({co, sum} != (ai + bi + cii)) begin
+                        correct = 0;
+                    end
+      
                     loop_was_skipped = 0;
-					
                 end
             end
         end
