@@ -6,6 +6,7 @@
 *.hw/
 *.ip_user_files/
 .Xil/
+LAB1/
 
 # --- Vivado Log & Journal Files ---
 # These change every time you click something in Vivado
