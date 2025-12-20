@@ -25,6 +25,32 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
+
+
+// ----------------------------------------------------------------------
+    // CLOCK DIVISION MATH EXPLANATION
+    // ----------------------------------------------------------------------
+    // System Clock Frequency = 100 MHz (10 ns period).
+    // The human eye detects flicker below ~60 Hz.
+    // We need to cycle through 4 digits fast enough to look continuous.
+    //
+    // If we use bits [19:18] for the selector 's':
+    // - The LSB of the selector is bit 18.
+    // - Bit 18 toggles every 2^18 clock cycles.
+    //
+    // Calculation:
+    // Time per digit = 2^18 cycles * 10 ns/cycle
+    //                = 262,144 * 10e-9 seconds
+    //                ≈ 2.62 ms
+    //
+    // Refresh Frequency per digit = 1 / 2.62ms ≈ 381 Hz
+    // Full Display Scan Rate (4 digits) = 381 Hz / 4 ≈ 95 Hz
+    //
+    // Result: 95 Hz is > 60 Hz, so the display looks stable with no flicker.
+    // ----------------------------------------------------------------------
+
+
+    
 module Seg_7_Display(
 
 	input [15:0] x,
@@ -40,7 +66,7 @@ module Seg_7_Display(
     
     // For 100MHz clock
     reg [19:0] clkdiv;
-    assign s = clkdiv[/* Fill here */]; 		// clock division - choose 2 bits to encode the current digit index (0,1,2,3)
+    assign s = clkdiv[19:18]; 		// clock division - choose 2 bits to encode the current digit index (0,1,2,3)
     
                             
    assign dp = (s == 2'b10) ? 0 : 1;           // dot indicator must be lit to the right of the 3rd digit from te right (between seconds and centiseconds)
@@ -49,7 +75,7 @@ module Seg_7_Display(
        case(s)
            0:digit = x[3:0]; // s is 00 -->0 ;  digit gets assigned 4 bit value assigned to x[3:0]
            1:digit = x[7:4]; // s is 01 -->1 ;  digit gets assigned 4 bit value assigned to x[7:4]
-           2:digit = x[11:8]; // s is 10 -->2 ;  digit gets assigned 4 bit value assigned to x[11:8
+           2:digit = x[11:8]; // s is 10 -->2 ;  digit gets assigned 4 bit value assigned to x[11:8]
            3:digit = x[15:12]; // s is 11 -->3 ;  digit gets assigned 4 bit value assigned to x[15:12]
            
            default:digit = x[3:0];
