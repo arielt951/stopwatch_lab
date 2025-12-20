@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company:         Tel Aviv University
-// Engineer:        Leo Segre
+// Engineer:        Yuval Horowitz and Ron Amrani
 // 
 // Create Date:     05/05/2019 00:19 AM
 // Design Name:     EE3 lab1

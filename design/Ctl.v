@@ -73,22 +73,10 @@ module Ctl(clk, reset, trig, split, init_regs, count_enabled);
      
    //-------------Output Function (Lambda) ----------------
    
-   // 1. Logic for init_regs:
-   // High only when in IDLE state.
-   // - In IDLE loops (00*), output is 10 (init=1).
-   // - In IDLE->COUNTING transition (01*), output is 10 (init=1).
-   // - In all other states, init is 0. [cite: 213, 228]
+
    assign init_regs = (state == IDLE);
 
-   // 2. Logic for count_enabled:
-   // High in two specific scenarios based on the arrows:
-   // Case A: State is COUNTING.
-   //         - Normal count (00*): Output 01 (enabled).
-   //         - Reset pressed (1**): Output 01 (enabled) before jump.
-   //         - Trig pressed (01*): Output 00 (disabled/pause).
-   // Case B: State is PAUSED.
-   //         - Trig pressed (01*): Output 01 (enabled/resume).
-   //         - All other cases (Stay 000, Split 001, Reset 1**) are disabled (00). [cite: 213, 230-238]
+
    assign count_enabled = (state == COUNTING);
 
 endmodule

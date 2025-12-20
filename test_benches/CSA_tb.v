@@ -1,9 +1,8 @@
 `timescale 1ns/10ps
-`define WIDTH 3
+`define WIDTH 4
 //////////////////////////////////////////////////////////////////////////////////
 // Company:         Tel Aviv University
-// Engineer:        
-// 
+// Engineer:        Yuval Horowitz and Ron Amrani
 // Create Date:     11/11/2018 08:59:38 PM
 // Design Name:     EE3 lab1
 // Module Name:     CSA_tb
@@ -62,4 +61,3 @@ module CSA_tb();
         $finish;
     end
 endmodule
-//hi bish

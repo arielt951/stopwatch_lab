@@ -1,8 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company:         Tel Aviv University
-// Engineer:        
-// 
+// Company:         Tel Aviv University       
+// Engineer:        Yuval Horowitz and Ron Amrani
 // Create Date:     05/05/2019 00:16 AM
 // Design Name:     EE3 lab1
 // Module Name:     Lim_Inc_tb
@@ -19,23 +18,79 @@
 //////////////////////////////////////////////////////////////////////////////////
 module Lim_Inc_tb();
 
+    // CORRECTED: Using 3 bits as requested
     reg [3:0] a; 
     reg ci, correct, loop_was_skipped;
     wire [3:0] sum;
     wire co;
     
-    integer ai,cii;
+    integer ai, cii;
     
-    // Instantiate the UUT (Unit Under Test)
-    
-	//FILL HERE
-    
+    // Variables for verifying results
+    integer calc_val; 
+    integer expected_sum, expected_co;
+
+    // -----------------------------------------------------------
+    // 1. INSTANTIATE THE UUT
+    // -----------------------------------------------------------
+    // Lim_Inc(7) -> L=7 -> N=3 bits.
+    Lim_Inc #(.L(7)) uut (
+        .a(a),      
+        .ci(ci), 
+        .sum(sum),
+        .co(co)
+    );
+
     initial begin
         correct = 1;
         loop_was_skipped = 1;
-        #1
-        //FILL HERE
-        #5
+        #1;
+        
+        // -----------------------------------------------------------
+        // 2. TEST LOOP
+        // -----------------------------------------------------------
+        // Testing all possible 3-bit values (0 to 7)
+        for (ai = 0; ai < 16; ai = ai + 1) begin
+            for (cii = 0; cii <= 1; cii = cii + 1) begin
+                
+                // Drive Inputs
+                a = ai;
+                ci = cii;
+
+                #10; // Wait for logic to settle
+
+                // -------------------------------------------------------
+                // 3. VERIFICATION LOGIC
+                // -------------------------------------------------------
+                // Calculate arithmetic sum
+                calc_val = ai + cii;
+
+                
+
+
+
+                // Apply Limited Incrementor Logic (L=7)
+                // Rule: If (a + ci) >= L, then sum=0, co=1. Else pass simple sum.
+                if (calc_val >= 7) begin
+                    expected_sum = 0;
+                    expected_co  = 1;
+                end else begin
+                    expected_sum = calc_val;
+                    expected_co  = 0;
+                end
+
+                // Compare Outputs
+                if (sum !== expected_sum || co !== expected_co) begin
+                    correct = 0;
+                    $display("Error at time %t: Input a=%d, ci=%d", $time, ai, cii);
+                    $display("Expected sum=%d, co=%d. Got sum=%d, co=%d", expected_sum, expected_co, sum, co);
+                end
+                
+                loop_was_skipped = 0;
+            end
+        end
+
+        #5;
         if (correct && ~loop_was_skipped)
             $display("Test Passed - %m");
         else

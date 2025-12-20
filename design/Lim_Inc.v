@@ -1,8 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company:         Tel Aviv University
-// Engineer:        
-// 
+// Company:         Tel Aviv University       
+// Engineer:        Yuval Horowitz and Ron Amrani
 // Create Date:     05/05/2019 00:16 AM
 // Design Name:     EE3 lab1
 // Module Name:     Lim_Inc
@@ -23,7 +22,6 @@ module Lim_Inc(a, ci, sum, co);
     
     // Calculate required bits N = ceil(log2(L))
     localparam N = $clog2(L); 
-    
     input [N-1:0] a;
     input ci;
     output reg [N-1:0] sum; // "reg" because we use always block (or wire + assign)

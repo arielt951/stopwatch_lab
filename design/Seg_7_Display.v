@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company: 
-// Engineer: 
+// Engineer:        Yuval Horowitz and Ron Amrani
 // 
 // Create Date:     11/12/2018 08:59:38 PM
 // Design Name:     EE3 lab1
@@ -40,7 +40,7 @@ module Seg_7_Display(
     
     // For 100MHz clock
     reg [19:0] clkdiv;
-    assign s = clkdiv[/* Fill here */]; 		// clock division - choose 2 bits to encode the current digit index (0,1,2,3)
+    assign s = clkdiv[19:18]; 		// clock division - choose 2 bits to encode the current digit index (0,1,2,3)
     
                             
    assign dp = (s == 2'b10) ? 0 : 1;           // dot indicator must be lit to the right of the 3rd digit from te right (between seconds and centiseconds)

@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company:         Tel Aviv University
-// Engineer:        
+// Engineer:        Yuval Horowitz and Ron Amrani
 // 
 // Create Date:     04/05/2019 08:59:38 PM
 // Design Name:     EE3 lab1
