@@ -34,8 +34,25 @@ module Lim_Inc_tb();
         correct = 1;
         loop_was_skipped = 1;
         #1
-        //FILL HERE
-        #5
+for (ai=0; ai<16; ai=ai+1) begin
+            for (cii=0; cii<=1; cii=cii+1) begin
+                a = ai; ci = cii;
+                #5; // Wait
+                
+                // Logic Check:
+                // Case 1: Overflow/Limit Reached (a + ci >= 10)
+                if (ai + cii >= 10) begin
+                    if (sum !== 0 || co !== 1) correct = 0;
+                end
+                // Case 2: Normal Increment
+                else begin
+                    if (sum !== (ai + cii) || co !== 0) correct = 0;
+                end
+                
+                loop_was_skipped = 0;
+            end
+        end
+         #5
         if (correct && ~loop_was_skipped)
             $display("Test Passed - %m");
         else

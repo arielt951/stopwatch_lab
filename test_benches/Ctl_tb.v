@@ -22,8 +22,10 @@ module Ctl_tb();
     wire init_regs, count_enabled;
     //integer ai,cii;
     
-    // Instantiate the UUT (Unit Under Test)
-    // FILL HERE
+   Ctl uut (
+        .clk(clk), .reset(reset), .trig(trig), .split(split), 
+        .init_regs(init_regs), .count_enabled(count_enabled)
+    );
     
     initial begin
         correct = 1;
@@ -35,9 +37,37 @@ module Ctl_tb();
         reset = 0; 
         correct = correct & init_regs & ~count_enabled;
         #20
-        // FILL HERE - TEST VARIOUS STATE TRANSITION 
-		// AND COMPARE AGAINST EXPECTED OUTPUT SIGNALS
-        #10        
+        // --- START TEST SEQUENCE ---
+        
+        // 1. Check IDLE State defaults
+        // Expected: init_regs=1, count_enabled=0
+        if (init_regs !== 1 || count_enabled !== 0) correct = 0;
+
+        // 2. Press TRIG -> Move to COUNTING
+        trig = 1; 
+        #10; // Wait 1 clock
+        trig = 0;
+        #10;
+        // Expected: init_regs=0, count_enabled=1
+        if (init_regs !== 0 || count_enabled !== 1) correct = 0;
+
+        // 3. Press TRIG -> Move to PAUSED
+        trig = 1;
+        #10;
+        trig = 0;
+        #10;
+        // Expected: init_regs=0, count_enabled=0
+        if (init_regs !== 0 || count_enabled !== 0) correct = 0;
+
+        // 4. Press SPLIT -> Move to IDLE
+        split = 1;
+        #10;
+        split = 0;
+        #10;
+        // Expected: Back to IDLE (init_regs=1)
+        if (init_regs !== 1) correct = 0;
+
+        #10
         
           
         if (correct)

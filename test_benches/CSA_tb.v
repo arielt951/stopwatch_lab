@@ -39,10 +39,16 @@ module CSA_tb();
         for( ai=0; ai<2**`WIDTH; ai=ai+1 ) begin
             for( bi=0; bi<2**`WIDTH; bi=bi+1 ) begin
                 for( cii=0; cii<=1; cii=cii+1 ) begin
-                    // FILL HERE :   a=...   b=....  
-		
-				    #5 
-					// FILL HERE :  correct = ....
+                   a = ai; b = bi; ci = cii;
+        
+                    #5 // Wait for logic to settle
+                    
+                    // 2. Verify Output
+                    // Check if {co, sum} equals the mathematical sum of inputs
+                    if ( {co, sum} !== (a + b + ci) ) begin
+                        correct = 0;
+                        $display("Error: %d + %d + %d = %d (expected %d)", a, b, ci, {co, sum}, a+b+ci);
+                    end
 					
                     loop_was_skipped = 0;
 					
