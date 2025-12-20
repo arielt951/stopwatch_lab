@@ -23,24 +23,45 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module Debouncer(clk, input_unstable, output_stable);
-
    input clk, input_unstable;
    output reg output_stable;
    
    parameter COUNTER_BITS = 7;
    
-   reg [COUNTER_BITS-1:0] counter; // Hysteresis counter
+   reg [COUNTER_BITS-1:0] counter;
+   reg state; // Internal state to track if we are currently "pressed" or "released"
    
-   always @(posedge clk)
-     begin
-
-        if (input_unstable == 1)
-            counter <= (counter < {COUNTER_BITS{1'b1}}) ? counter  + 1 : counter;
-        else
-            counter <= (counter > {COUNTER_BITS{1'b0}}) ? counter  - 1 : counter;
+   // Hysteresis counter logic
+   always @(posedge clk) begin
+        // 1. Counter Saturation Logic
+        if (input_unstable == 1) begin
+            // Increment unless maxed out (all 1s)
+            if (counter < {COUNTER_BITS{1'b1}})
+                counter <= counter + 1;
+        end
+        else begin
+            // Decrement unless empty (all 0s)
+            if (counter > {COUNTER_BITS{1'b0}})
+                counter <= counter - 1;
+        end
             
-        // Synchronously generate 1-cycle-pulse upon the transition from 0 mode to 1 mode.
-        // TODO
-     end
+        // 2. Pulse Generation Logic 
+        // We generate a pulse ONLY when we transition from "unpressed" to "pressed".
+        
+        // Reset the pulse by default every cycle
+        output_stable <= 0;
+
+        if (counter == {COUNTER_BITS{1'b1}}) begin
+            // If counter is FULL...
+            if (state == 0) begin
+                output_stable <= 1; // Fire the pulse!
+                state <= 1;         // Mark as "pressed" so we don't fire again
+            end
+        end
+        else if (counter == {COUNTER_BITS{1'b0}}) begin
+            // If counter is EMPTY...
+            state <= 0;             // Mark as "released", ready for next press
+        end
+   end
        
 endmodule
