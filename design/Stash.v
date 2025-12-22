@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company:         Tel Aviv University
-// Engineer:        Leo Segre
+// Engineer:        Ariel Turnowksi & Ofek Goshen
 // 
 // Create Date:     05/05/2019 00:19 AM
 // Design Name:     EE3 lab1
