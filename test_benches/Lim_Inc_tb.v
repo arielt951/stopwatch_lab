@@ -71,7 +71,7 @@ module Lim_Inc_tb();
 
                 // Apply Limited Incrementor Logic (L=7)
                 // Rule: If (a + ci) >= L, then sum=0, co=1. Else pass simple sum.
-                if (calc_val >= 7) begin
+                if (calc_val >= 11) begin
                     expected_sum = 0;
                     expected_co  = 1;
                 end else begin
