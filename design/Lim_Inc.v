@@ -18,7 +18,7 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 module Lim_Inc(a, ci, sum, co);
-    parameter L = 10;
+    parameter L = 11;
     
     // Calculate required bits N = ceil(log2(L))
     localparam N = $clog2(L); 
