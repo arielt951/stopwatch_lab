@@ -16,7 +16,7 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-module Stash_tb();
+module Stash_Read_tb_2();
 
     reg clk, reset, sample_in_valid, next_sample, correct, loop_was_skipped;
     reg [7:0] sample_in;
