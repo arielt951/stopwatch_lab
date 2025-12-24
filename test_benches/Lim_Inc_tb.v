@@ -26,33 +26,64 @@ module Lim_Inc_tb();
     
     integer ai,cii;
     
-    // Instantiate the UUT (Unit Under Test)
-    
-	//FILL HERE
+    // Variables for verifying results
+    integer calc_val; 
+    integer expected_sum, expected_co;
+
+    // -----------------------------------------------------------
+    // 1. INSTANTIATE THE UUT
+    // -----------------------------------------------------------
+    Lim_Inc #(.L(11)) uut (
+        .a(a),      
+        .ci(ci), 
+        .sum(sum),
+        .co(co)
+    );
     
     initial begin
         correct = 1;
         loop_was_skipped = 1;
-        #1
-for (ai=0; ai<16; ai=ai+1) begin
-            for (cii=0; cii<=1; cii=cii+1) begin
-                a = ai; ci = cii;
-                #5; // Wait
+        #1;
+        
+        // -----------------------------------------------------------
+        // 2. TEST LOOP
+        // -----------------------------------------------------------
+        // Testing all possible 3-bit values (0 to 7)
+        for (ai = 0; ai < 16; ai = ai + 1) begin
+            for (cii = 0; cii <= 1; cii = cii + 1) begin
                 
-                // Logic Check:
-                // Case 1: Overflow/Limit Reached (a + ci >= 10)
-                if (ai + cii >= 10) begin
-                    if (sum !== 0 || co !== 1) correct = 0;
+                // Drive Inputs
+                a = ai;
+                ci = cii;
+
+                #10; // Wait for logic to settle
+
+                // -------------------------------------------------------
+                // 3. VERIFICATION LOGIC
+                // -------------------------------------------------------
+                // Calculate arithmetic sum
+                calc_val = ai + cii;
+                // Apply Limited Incrementor Logic (L=7)
+                // Rule: If (a + ci) >= L, then sum=0, co=1. Else pass simple sum.
+                if (calc_val >= 11) begin
+                    expected_sum = 0;
+                    expected_co  = 1;
+                end else begin
+                    expected_sum = calc_val;
+                    expected_co  = 0;
                 end
-                // Case 2: Normal Increment
-                else begin
-                    if (sum !== (ai + cii) || co !== 0) correct = 0;
+
+                // Compare Outputs
+                if (sum !== expected_sum || co !== expected_co) begin
+                    correct = 0;
+                    $display("Error at time %t: Input a=%d, ci=%d", $time, ai, cii);
+                    $display("Expected sum=%d, co=%d. Got sum=%d, co=%d", expected_sum, expected_co, sum, co);
                 end
                 
                 loop_was_skipped = 0;
             end
         end
-         #5
+        #5;
         if (correct && ~loop_was_skipped)
             $display("Test Passed - %m");
         else

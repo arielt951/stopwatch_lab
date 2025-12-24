@@ -40,9 +40,10 @@ module Debouncer(clk, input_unstable, output_stable);
                 counter <= counter + 1;
         end
         else begin
-            // Decrement unless empty (all 0s)
+            // // Decrement unless empty (all 0s)
             if (counter > {COUNTER_BITS{1'b0}})
                 counter <= counter - 1;
+            //counter <= {COUNTER_BITS{1'b0}}; //check if we need the settle down
         end
             
         // 2. Pulse Generation Logic 

@@ -18,7 +18,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 module Ctl_tb();
 
-    reg clk, reset, trig, split, correct, loop_was_skipped;
+    reg clk, reset, trig, split, correct;
     wire init_regs, count_enabled;
     //integer ai,cii;
     
