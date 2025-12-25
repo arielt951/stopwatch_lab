@@ -27,9 +27,12 @@ module Stash(clk, reset, sample_in, sample_in_valid, next_sample, sample_out);
     output [7:0] sample_out;
   
     // --- Internal Registers ---
+    reg [25:0] timer; // 26 bits can hold 50 million
+    reg showing_latest;
     reg [7:0] memory [DEPTH-1:0];      // The storage array
     reg [PTR_WIDTH-1:0] write_ptr;     // Points to next empty slot
     reg [PTR_WIDTH-1:0] read_ptr;      // Points to currently exposed slot
+    reg [7:0] captured_sample;
     integer i;                         // Iterator for reset loop
 
     // --- Wire definitions for Lim_Inc outputs ---
@@ -58,34 +61,40 @@ module Stash(clk, reset, sample_in, sample_in_valid, next_sample, sample_out);
     );
 
     // --- 3. Synchronous Logic (State Updates) ---
+   // --- 3. Synchronous Logic (State Updates) ---
     always @(posedge clk) begin
         if (reset) begin
             write_ptr <= 0;
             read_ptr  <= 0;
-            // Clear all memory slots
+            timer <= 0;
+            showing_latest <= 0;
+            captured_sample <= 8'b0;
             for (i = 0; i < DEPTH; i = i + 1) begin
                 memory[i] <= 8'b0;
             end
         end
         else begin
-            // --- Write Handling ---
+            // Pulse Stretcher / Timer Logic
             if (sample_in_valid) begin
-                memory[write_ptr] <= sample_in; // Store new sample
-                write_ptr <= next_write_ptr_val;// Advance write pointer
+                memory[write_ptr] <= sample_in;
+                write_ptr <= next_write_ptr_val;
+                captured_sample <= sample_in;
+                timer <= 50_000_000; // Load 0.5s delay (for 100MHz clock)
+                showing_latest <= 1;
+            end else if (timer > 0) begin
+                timer <= timer - 1;
+                showing_latest <= 1; // Keep high while counting
+            end else begin
+                showing_latest <= 0;
             end
-            
-            // --- Read/Next Handling ---
-            else begin
-                // Only advance read pointer if we are NOT writing a new sample.
-                // (Writing takes priority for the view).
-                read_ptr <= next_read_ptr_val;
-            end
+
+            // Read Pointer Logic (Now independent of sampling)
+            read_ptr <= next_read_ptr_val; 
         end
     end
 
-    // --- 4. Output Logic (The Bypass) ---
-    // If we are currently sampling, show 'sample_in' directly.
-    // Otherwise, show the value stored at 'read_ptr'.
-    assign sample_out = (sample_in_valid) ? sample_in : memory[read_ptr];
+    // --- 4. Output Logic (Corrected Bypass) ---
+    // Use 'showing_latest' instead of 'sample_in_valid' to widen the view window
+    assign sample_out = (showing_latest) ? captured_sample : memory[read_ptr];
 
 endmodule
