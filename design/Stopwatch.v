@@ -54,6 +54,7 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
 
     reg [7:0] split_time;
     reg split_mode;
+    wire [7:0] stopwatch_view;
 
     // -------------------------------------------------------------------------
     // 1. DEBOUNCERS
@@ -83,22 +84,23 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // -------------------------------------------------------------------------
     // Toggle between controlling Stopwatch (1) and Stash (0)
     always @(posedge clk) begin
-        if (reset)
+        if (reset) begin 
             split_time <= 8'b0;
             split_mode <= 0;
             selected_mode <= 1; // Default to Stopwatch
+        end
         else begin 
             if (toggle)
                 selected_mode <= ~selected_mode;
 
             // Split Functionality: When in Stopwatch mode and Split is pressed
-            if (count_enabled && split) begin
-                split_time_reg <= current_time;
-                split_active   <= 1;
+            if (count_enabled && ctl_split) begin
+                split_time <= current_time;
+                split_mode   <= 1;
             end
             // Entering Pause (count_enabled goes low) returns to live time.
             else if (!count_enabled) begin
-                split_active   <= 0;
+                split_mode   <= 0;
             end
         end
     end
@@ -161,7 +163,7 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // 6. DISPLAY DRIVER
     // -------------------------------------------------------------------------
     // Concatenate: [Left Digits: Stopwatch] [Right Digits: Stash] , stopwatch view is determined by split mode
-    wire [7:0] stopwatch_view = (split_active) ? split_time_reg : current_time;
+    assign stopwatch_view = (split_mode) ? split_time : current_time;
     assign display_data = {stopwatch_view, stash_output};
 
     Seg_7_Display driver (

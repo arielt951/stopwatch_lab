@@ -89,6 +89,6 @@ module Ctl(clk, reset, trig, split, init_regs, count_enabled);
    // Case B: State is PAUSED.
    //         - Trig pressed (01*): Output 01 (enabled/resume).
    //         - All other cases (Stay 000, Split 001, Reset 1**) are disabled (00). [cite: 213, 230-238]
-   assign count_enabled = (state == COUNTING);
+   assign count_enabled = (state == COUNTING && !trig) || (state == PAUSED && trig);
 
 endmodule
