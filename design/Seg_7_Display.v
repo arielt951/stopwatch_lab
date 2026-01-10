@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: 
-// Engineer: 
+// Company: Tel Aviv University
+// Engineer: Ariel Turnowski Ofek Goshen
 // 
 // Create Date:     11/12/2018 08:59:38 PM
 // Design Name:     EE3 lab1

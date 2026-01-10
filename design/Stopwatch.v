@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company:         Tel Aviv University
-// Engineer:        
+// Engineer:        Ariel Turnowski Ofek Goshen
 // 
 // Create Date:     05/05/2019 01:28AM
 // Design Name:     EE3 lab1
@@ -52,6 +52,9 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     
     reg selected_mode;          // 0 = Stash (Right), 1 = Stopwatch (Left)
 
+    reg [7:0] split_time;
+    reg split_mode;
+
     // -------------------------------------------------------------------------
     // 1. DEBOUNCERS
     // -------------------------------------------------------------------------
@@ -81,11 +84,24 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // Toggle between controlling Stopwatch (1) and Stash (0)
     always @(posedge clk) begin
         if (reset)
+            split_time <= 8'b0;
+            split_mode <= 0;
             selected_mode <= 1; // Default to Stopwatch
-        else if (toggle)
-            selected_mode <= ~selected_mode;
-    end
+        else begin 
+            if (toggle)
+                selected_mode <= ~selected_mode;
 
+            // Split Functionality: When in Stopwatch mode and Split is pressed
+            if (count_enabled && split) begin
+                split_time_reg <= current_time;
+                split_active   <= 1;
+            end
+            // Entering Pause (count_enabled goes low) returns to live time.
+            else if (!count_enabled) begin
+                split_active   <= 0;
+            end
+        end
+    end
     // LED Feedback: Show which side is currently controlled
     assign led_left  = (selected_mode == 1) ? 3'b111 : 3'b000;
     assign led_right = (selected_mode == 0) ? 3'b111 : 3'b000;
@@ -144,8 +160,9 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // -------------------------------------------------------------------------
     // 6. DISPLAY DRIVER
     // -------------------------------------------------------------------------
-    // Concatenate: [Left Digits: Stopwatch] [Right Digits: Stash]
-    assign display_data = {current_time, stash_output};
+    // Concatenate: [Left Digits: Stopwatch] [Right Digits: Stash] , stopwatch view is determined by split mode
+    wire [7:0] stopwatch_view = (split_active) ? split_time_reg : current_time;
+    assign display_data = {stopwatch_view, stash_output};
 
     Seg_7_Display driver (
         //intputs
