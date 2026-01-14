@@ -41,7 +41,7 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     
     // Internal Control Signals
     // "Left" = Stopwatch logic, "Right" = Stash logic
-    wire trig_right, split_right, init_regs_right, count_enabled_right; // 'Right' vars mostly unused/placeholders if Stash has no complex FSM
+    wire trig_right; // 'Right' vars mostly unused/placeholders if Stash has no complex FSM
     wire trig_left, split_left, init_regs_left, count_enabled_left;
     
     // Stash/Stopwatch outputs
