@@ -47,6 +47,12 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // Stash/Stopwatch outputs
     wire [7:0] stopwatch_out;
     wire [7:0] stash_out;
+    
+    //split mode
+    reg [7:0] split_time;
+    reg split_mode;
+    wire [7:0] stopwatch_view;
+    
 
     // Toggle State: 0 = Stopwatch Selected, 1 = Stash Selected
     reg selected_stopwatch; 
@@ -67,10 +73,25 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // Toggle the selection state whenever btnL (toggle) is pressed.
     // Reset sets it back to Stopwatch view.
     always @(posedge clk) begin
-        if (reset)
+        if (reset) begin 
+            split_time <= 8'b0;
+            split_mode <= 0;
             selected_stopwatch <= 0;
-        else if (toggle)
+        end
+        else begin  
+        if (toggle) 
+    
             selected_stopwatch <= ~selected_stopwatch;
+            // Split Functionality: When in Stopwatch mode and Split is pressed
+            if (count_enabled_left && split_left) begin
+                split_time <= stopwatch_out;
+                split_mode   <= 1;
+            end
+            // Entering Pause (count_enabled goes low) returns to live time.
+            else if (!count_enabled_left) begin
+                split_mode   <= 0;
+            end
+        end
     end
     
     // LEDs indicate selection:
@@ -86,7 +107,7 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     
     // STOPWATCH CONTROL (Left): Receives Trigger only if selected_stopwatch is 0.
     assign trig_left  = (selected_stopwatch == 0) ? trig : 1'b0;
-    assign split_left = split; // Split button is dedicated to Stopwatch (per manual)
+    assign split_left = (selected_stopwatch == 0) ? split : 1'b0; // Split button is dedicated to Stopwatch (per manual)
 
     // STASH CONTROL (Right): Receives "Next Sample" (trig) only if selected_stopwatch is 1.
     assign trig_right = (selected_stopwatch == 1) ? trig : 1'b0;
@@ -127,7 +148,9 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // --- Display Driver ---
     // Concatenate stopwatch (High Byte) and Stash (Low Byte) for the display input.
     // Structure: [Stopwatch_Tens][Stopwatch_Ones][Stash_Tens][Stash_Ones]
-    assign time_reading = {stopwatch_out, stash_out};
+    assign stopwatch_view = (split_mode) ? split_time : stopwatch_out;
+    assign time_reading = {stopwatch_view, stash_out};
+    
     
     Seg_7_Display display_driver (
         .clk(clk),
