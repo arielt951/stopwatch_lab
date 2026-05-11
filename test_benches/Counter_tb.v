@@ -3,7 +3,7 @@
 // Company:         Tel Aviv University
 // Engineer:        
 // 
-// Create Date:     00:00:00  AM 05/05/2019 
+// Create Date:     11/12/2018 08:59:38 PM
 // Design Name:     EE3 lab1
 // Module Name:     Counter_tb
 // Project Name:    Electrical Lab 3, FPGA Experiment #1
@@ -12,39 +12,41 @@
 // Description:     test bench for Counter module
 // Dependencies:    Counter
 //
-// Revision:        3.0
-// Revision:        3.1 - changed  9999999 to 99999999 for a proper, 1sec delay, 
-//                        in the inner test loop.
+// Revision:        2.0
 // Additional Comments: 
 //
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Company:         Tel Aviv University
-// Module Name:     Counter_tb
-// Description:     Test bench for Counter module
 //////////////////////////////////////////////////////////////////////////////////
 module Counter_tb();
 
-    reg clk, init_regs, count_enabled, correct, loop_was_skipped;
-    wire [7:0] time_reading;
+    reg clk, init_regs, count_enabled, count_sample, show_sample, correct, loop_was_skipped;
+    wire [15:0] time_reading;
     wire [3:0] tens_seconds_wire;
     wire [3:0] ones_seconds_wire;
-    integer ts,os,sync;
+    wire [3:0] tens_centiseconds_wire;
+    wire [3:0] ones_centiseconds_wire;
+    integer ts,os,tc,oc, sync;
     
     // Instantiate the UUT (Unit Under Test)
-        Counter uut (
+    // TODO
+    Counter checked_counter(
         .clk(clk), 
-        .init_regs(init_regs), 
+        .init_regs(init_regs),
         .count_enabled(count_enabled), 
-        //output
+        .count_sample(count_sample), 
+        .show_sample(show_sample), 
         .time_reading(time_reading)
     );
     
-    assign tens_seconds_wire = time_reading[7:4];
-    assign ones_seconds_wire = time_reading[3:0];
+    assign tens_seconds_wire = time_reading[15:12];
+    assign ones_seconds_wire = time_reading[11:8];
+    assign tens_centiseconds_wire = time_reading[7:4];
+    assign ones_centiseconds_wire = time_reading[3:0];
     
     initial begin 
         #1
         sync = 0;
+        count_sample = 0;
+        show_sample = 0;
         correct = 1;
         loop_was_skipped = 1;
         clk = 1;
@@ -52,33 +54,20 @@ module Counter_tb();
         count_enabled = 0;
         #20
         init_regs = 0;
-        count_enabled = 1; // Start Counting
-        //1 bilion + 21 is the minimal time delay in the loop
-        // ---------------------------------------------------------------------
-        // 2. VERIFICATION LOOP
-        // ---------------------------------------------------------------------
-        // Check for 2 seconds: 00 -> 01
-        for( ts=0; ts<2; ts=ts+1 ) begin 
-            for( os=0; os<10; os=os+1 ) begin 
-                
-                // VERIFICATION
-                // We check the value *before* waiting for the next second.
-                // At os=0, we expect 0. At os=1, we expect 1.
-                if (tens_seconds_wire !== ts || ones_seconds_wire !== os) begin
-                     correct = 0;
-                     $display("Error at time %t: Expected %d%d, Got %d%d", 
-                              $time, ts, os, tens_seconds_wire, ones_seconds_wire);
-                end
-
-                // WAIT FOR 1 SECOND
-                // 100 MHz clock = 10ns period.
-                // 1 sec = 100,000,000 cycles * 10ns = 1,000,000,000 ns
-                // We add 'sync' to slightly offset the check from the edge in the second pass.
-                #(1000000000 + 100 + sync); 
-                
+        count_enabled = 1;        
+        // Remember that every 1000000 clocks are 10 milliseconds
+        for( ts=0; ts<1; ts=ts+1 ) begin // not more than 1*10 seconds check
+            for( os=0; os<2; os=os+1 ) begin // not more than 2*1 seconds check
+                for( tc=0; tc<10; tc=tc+1 ) begin // check 10*0.1 seconds 
+                    for( oc=0; oc<10; oc=oc+1 ) begin  // check 10*0.001 seconds
+                            #(9999999+sync);// FILL HERE THE "correct" signal MAINTENANCE 
+                            if((ts!=tens_seconds_wire)||(os!=ones_seconds_wire)||(tc!=tens_centiseconds_wire)||(oc!=ones_centiseconds_wire))begin 
+                                correct=0;
+                            end
                             sync = sync | 1;
                             loop_was_skipped = 0;
-
+                    end
+                end
            end
         end
         
@@ -89,6 +78,6 @@ module Counter_tb();
             $display("Test Failed - %m");
         $finish;
     end
-        // 100MHz Clock Generation (Period = 10ns)
+    
     always #5 clk = ~clk;
 endmodule
