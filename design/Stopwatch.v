@@ -24,15 +24,13 @@
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-`timescale 1ns/10ps
-//////////////////////////////////////////////////////////////////////////////////
 // Module Name:     Stopwatch
 // Description:     Top module implementing Stopwatch (Left) and Stash (Right).
 //                  Follows PDF Task 9 specifications.
 //////////////////////////////////////////////////////////////////////////////////
 
-module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_right);
-    input              clk, btnC, btnU, btnR, btnL, btnD;
+module Stopwatch(clk, btnC, btnU, btnR, btnL, seg, an, dp, led_left, led_right);
+    input              clk, btnC, btnU, btnR, btnL;
     output  wire [6:0] seg;
     output  wire [3:0] an;
     output  wire       dp;
@@ -40,21 +38,28 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     output  wire [2:0] led_right;
 
     // --- Internal Wires ---
-    wire reset, trig, split, toggle, sample_btn;
+    wire reset, trig, split, toggle;
     wire [15:0] display_data;
-    wire [7:0] current_time;    // Output from Counter
-    wire [7:0] stash_output;    // Output from Stash
     
-    // Control Signals
-    wire init_regs, count_enabled;
-    wire ctl_trig, ctl_split;   // Signals routed to Ctl
-    wire stash_next;            // Signal routed to Stash
+    // Left Stopwatch Wires
+    wire [7:0] time_left;
+    wire init_regs_left, count_enabled_left;
+    wire ctl_trig_left, ctl_split_left;
+    wire [7:0] view_left;
     
-    reg selected_mode;          // 0 = Stash (Right), 1 = Stopwatch (Left)
+    // Right Stopwatch Wires
+    wire [7:0] time_right;
+    wire init_regs_right, count_enabled_right;
+    wire ctl_trig_right, ctl_split_right;
+    wire [7:0] view_right;
+    
+    reg selected_mode;          // 1 = Left, 0 = Right
 
-    reg [7:0] split_time;
-    reg split_mode;
-    wire [7:0] stopwatch_view;
+    reg [7:0] split_time_left;
+    reg split_mode_left;
+    
+    reg [7:0] split_time_right;
+    reg split_mode_right;
 
     // -------------------------------------------------------------------------
     // 1. DEBOUNCERS
@@ -75,35 +80,42 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
                          .input_unstable(btnL),
                          .output_stable(toggle));
 
-    Debouncer db_sample (.clk(clk),
-                         .input_unstable(btnD),
-                         .output_stable(sample_btn));
-
     // -------------------------------------------------------------------------
-    // 2. MODE SELECTION (btnL)
+    // 2. MODE SELECTION AND SPLIT LOGIC
     // -------------------------------------------------------------------------
-    // Toggle between controlling Stopwatch (1) and Stash (0)
     always @(posedge clk) begin
         if (reset) begin 
-            split_time <= 8'b0;
-            split_mode <= 0;
-            selected_mode <= 1; // Default to Stopwatch
+            split_time_left <= 8'b0;
+            split_mode_left <= 0;
+            split_time_right <= 8'b0;
+            split_mode_right <= 0;
+            selected_mode <= 1; // Default to Left
         end
         else begin 
+            // Toggle selection
             if (toggle)
                 selected_mode <= ~selected_mode;
 
-            // Split Functionality: When in Stopwatch mode and Split is pressed
-            if (count_enabled && ctl_split) begin
-                split_time <= current_time;
-                split_mode   <= 1;
+            // Split Functionality - Left Stopwatch
+            if (count_enabled_left && ctl_split_left) begin
+                split_time_left <= time_left;
+                split_mode_left <= 1;
             end
-            // Entering Pause (count_enabled goes low) returns to live time.
-            else if (!count_enabled) begin
-                split_mode   <= 0;
+            else if (!count_enabled_left) begin
+                split_mode_left <= 0;
+            end
+            
+            // Split Functionality - Right Stopwatch
+            if (count_enabled_right && ctl_split_right) begin
+                split_time_right <= time_right;
+                split_mode_right <= 1;
+            end
+            else if (!count_enabled_right) begin
+                split_mode_right <= 0;
             end
         end
     end
+    
     // LED Feedback: Show which side is currently controlled
     assign led_left  = (selected_mode == 1) ? 3'b111 : 3'b000;
     assign led_right = (selected_mode == 0) ? 3'b111 : 3'b000;
@@ -111,67 +123,63 @@ module Stopwatch(clk, btnC, btnU, btnR, btnL, btnD, seg, an, dp, led_left, led_r
     // -------------------------------------------------------------------------
     // 3. SIGNAL ROUTING (Multiplexing Inputs)
     // -------------------------------------------------------------------------
-    // btnU (Trigger/Next):
-    //   - If Mode=Stopwatch (1): Goes to Ctl.trig
-    //   - If Mode=Stash (0):     Goes to Stash.next_sample
-    assign ctl_trig   = (selected_mode == 1) ? trig : 1'b0;
-    assign stash_next = (selected_mode == 0) ? trig : 1'b0;
+    assign ctl_trig_left   = (selected_mode == 1) ? trig : 1'b0;
+    assign ctl_split_left  = (selected_mode == 1) ? split : 1'b0;
 
-    // btnR (Split/Reset):
-    //   - Only used by Stopwatch (Ctl). Stash ignores it.
-    assign ctl_split  = (selected_mode == 1) ? split : 1'b0;
+    assign ctl_trig_right  = (selected_mode == 0) ? trig : 1'b0;
+    assign ctl_split_right = (selected_mode == 0) ? split : 1'b0;
 
     // -------------------------------------------------------------------------
     // 4. STOPWATCH LOGIC (Left Side)
     // -------------------------------------------------------------------------
-    Ctl control_unit (
-        //inputs
+    Ctl control_unit_left (
         .clk(clk), 
         .reset(reset), 
-        .trig(ctl_trig), 
-        .split(ctl_split),
-        //outputs 
-        .init_regs(init_regs), 
-        .count_enabled(count_enabled)
+        .trig(ctl_trig_left), 
+        .split(ctl_split_left),
+        .init_regs(init_regs_left), 
+        .count_enabled(count_enabled_left)
     );
 
-    Counter #(.CLK_FREQ(100000000)) timer (
-        //inputs
+    Counter #(.CLK_FREQ(100000000)) timer_left (
         .clk(clk), 
-        .init_regs(init_regs), 
-        .count_enabled(count_enabled), 
-        //outputs
-        .time_reading(current_time)
+        .init_regs(init_regs_left), 
+        .count_enabled(count_enabled_left), 
+        .time_reading(time_left)
     );
 
     // -------------------------------------------------------------------------
-    // 5. STASH LOGIC (Right Side)
+    // 5. STOPWATCH LOGIC (Right Side)
     // -------------------------------------------------------------------------
-    // Note: 'sample_btn' (btnD) works regardless of 'selected_mode' [cite: 522]
-    Stash #(.DEPTH(5)) memory_unit (
-        //inputs
+    Ctl control_unit_right (
         .clk(clk), 
         .reset(reset), 
-        .sample_in(current_time), 
-        .sample_in_valid(sample_btn), 
-        .next_sample(stash_next), 
-        //outputs
-        .sample_out(stash_output)
+        .trig(ctl_trig_right), 
+        .split(ctl_split_right),
+        .init_regs(init_regs_right), 
+        .count_enabled(count_enabled_right)
+    );
+
+    Counter #(.CLK_FREQ(100000000)) timer_right (
+        .clk(clk), 
+        .init_regs(init_regs_right), 
+        .count_enabled(count_enabled_right), 
+        .time_reading(time_right)
     );
 
     // -------------------------------------------------------------------------
     // 6. DISPLAY DRIVER
     // -------------------------------------------------------------------------
-    // Concatenate: [Left Digits: Stopwatch] [Right Digits: Stash] , stopwatch view is determined by split mode
-    assign stopwatch_view = (split_mode) ? split_time : current_time;
-    assign display_data = {stopwatch_view, stash_output};
+    assign view_left = (split_mode_left) ? split_time_left : time_left;
+    assign view_right = (split_mode_right) ? split_time_right : time_right;
+    
+    // Concatenate: [Left Digits: Stopwatch Left] [Right Digits: Stopwatch Right]
+    assign display_data = {view_left, view_right};
 
     Seg_7_Display driver (
-        //intputs
         .clk(clk),
         .clr(reset),
         .x(display_data),
-        //outputs
         .a_to_g(seg),
         .an(an),
         .dp(dp)
