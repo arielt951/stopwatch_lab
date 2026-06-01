@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
 // Company:         Tel Aviv University
-// Engineer:        Ariel Turnowski Ofek Goshen
+// Engineer:        Ariel Turnowski & Ofek Goshen
 // 
 // Create Date:     05/05/2019 02:59:38 AM
 // Design Name:     EE3 lab1
@@ -23,46 +23,28 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module Debouncer(clk, input_unstable, output_stable);
+
    input clk, input_unstable;
    output reg output_stable;
    
    parameter COUNTER_BITS = 7;
    
-   reg [COUNTER_BITS-1:0] counter;
-   reg state; // Internal state to track if we are currently "pressed" or "released"
+   reg [COUNTER_BITS-1:0] counter; // Hysteresis counter
    
-   // Hysteresis counter logic
-   always @(posedge clk) begin
-        // 1. Counter Saturation Logic
-        if (input_unstable == 1) begin
-            // Increment unless maxed out (all 1s)
-            if (counter < {COUNTER_BITS{1'b1}})
-                counter <= counter + 1;
-        end
-        else begin
-            // // Decrement unless empty (all 0s)
-            if (counter > {COUNTER_BITS{1'b0}})
-                counter <= counter - 1;
-            //counter <= {COUNTER_BITS{1'b0}}; //check if we need the settle down
-        end
-            
-        // 2. Pulse Generation Logic 
-        // We generate a pulse ONLY when we transition from "unpressed" to "pressed".
-        
-        // Reset the pulse by default every cycle
-        output_stable <= 0;
+   always @(posedge clk)
+     begin
 
-        if (counter == {COUNTER_BITS{1'b1}}) begin
-            // If counter is FULL...
-            if (state == 0) begin
-                output_stable <= 1; // Fire the pulse!
-                state <= 1;         // Mark as "pressed" so we don't fire again
-            end
-        end
-        else if (counter == {COUNTER_BITS{1'b0}}) begin
-            // If counter is EMPTY...
-            state <= 0;             // Mark as "released", ready for next press
-        end
-   end
+        if (input_unstable == 1)
+            counter <= (counter < {COUNTER_BITS{1'b1}}) ? counter  + 1 : counter;
+        else
+            counter <= (counter > {COUNTER_BITS{1'b0}}) ? counter  - 1 : counter;   
+        // Synchronously generate 1-cycle-pulse upon the transition from 0 mode to 1 mode.
+         if((input_unstable == 0)&(counter == {COUNTER_BITS{1'b1}})) begin
+          output_stable <= 1;
+          counter <= 0;
+          end
+         else
+          output_stable <= 0;
+     end
        
 endmodule

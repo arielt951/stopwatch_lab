@@ -1,7 +1,7 @@
 `timescale 1ns/10ps
 //////////////////////////////////////////////////////////////////////////////////
-// Company: Tel Aviv University
-// Engineer: Ariel Turnowski Ofek Goshen
+// Company:         Tel Aviv University
+// Engineer:        Ariel Turnowski & Ofek Goshen
 // 
 // Create Date:     11/12/2018 08:59:38 PM
 // Design Name:     EE3 lab1
@@ -21,102 +21,76 @@
 //
 // Dependencies:    None
 //
-// Revision:        3.0
+// Revision:        5.0
 // Additional Comments: 
 //
 //////////////////////////////////////////////////////////////////////////////////
-
-
-// ----------------------------------------------------------------------
-    // CLOCK DIVISION MATH EXPLANATION
-    // ----------------------------------------------------------------------
-    // System Clock Frequency = 100 MHz (10 ns period).
-    // The human eye detects flicker below ~60 Hz.
-    // We need to cycle through 4 digits fast enough to look continuous.
-    //
-    // If we use bits [19:18] for the selector 's':
-    // - The LSB of the selector is bit 18.
-    // - Bit 18 toggles every 2^18 clock cycles.
-    //
-    // Calculation:
-    // Time per digit = 2^18 cycles * 10 ns/cycle
-    //                = 262,144 * 10e-9 seconds
-    //                ≈ 2.62 ms
-    //
-    // Refresh Frequency per digit = 1 / 2.62ms ≈ 381 Hz
-    // Full Display Scan Rate (4 digits) = 381 Hz / 4 ≈ 95 Hz
-    //
-    // Result: 95 Hz is > 60 Hz, so the display looks stable with no flicker.
-    // ----------------------------------------------------------------------
-
-
-    
 module Seg_7_Display(
+    input [15:0] x,   
+    input clk,      
+    input clr,       
+    output reg [6:0] a_to_g, 
+    output reg [3:0] an,     
+    output wire dp          
+);
 
-	input [15:0] x,
-    input clk,
-    input clr,
-    output reg [6:0] a_to_g,
-    output reg [3:0] an,
-    output wire dp 
-	 );
-            
-    wire [1:0] s;	 
+    wire [1:0] digit_select;
     reg [3:0] digit;
-    
+
     // For 100MHz clock
-    reg [19:0] clkdiv;
-    assign s = clkdiv[19:18]; 		// clock division - choose 2 bits to encode the current digit index (0,1,2,3)
-    
-                            
-   assign dp = (s == 2'b10) ? 0 : 1;           // dot indicator must be lit to the right of the 3rd digit from te right (between seconds and centiseconds)
+    reg [19:0] clkdiv = 20'b0;
+    assign digit_select = clkdiv[19:18];  // this effectively generates the frequency division, since these bits are toggled every 2^18 clock cycles
+                              // which correspond to every 2.62144 miliseconds (digit period), and ~10ms refresh period of the whole 4-digit screen.
 
-   always @(posedge clk)// or posedge clr)
-       case(s)
-           0:digit = x[3:0]; // s is 00 -->0 ;  digit gets assigned 4 bit value assigned to x[3:0]
-           1:digit = x[7:4]; // s is 01 -->1 ;  digit gets assigned 4 bit value assigned to x[7:4]
-           2:digit = x[11:8]; // s is 10 -->2 ;  digit gets assigned 4 bit value assigned to x[11:8]
-           3:digit = x[15:12]; // s is 11 -->3 ;  digit gets assigned 4 bit value assigned to x[15:12]
-           
-           default:digit = x[3:0];
-       endcase
-       
-   //decoder or truth-table for 7a_to_g display values
-   always @(*)
-       case(digit)
-           //////////<---MSB-LSB<---/////
-           //////////////gfedcba/////////                       a
-           0:a_to_g = 7'b1000000;////0000                      __                    
-           1:a_to_g = 7'b1111001;////0001                   f/   /b
-           2:a_to_g = 7'b0100100;////0010                     g
-           //                                                __    
-           3:a_to_g = 7'b0110000;////0011                e /   /c
-           4:a_to_g = 7'b0011001;////0100                  __
-           5:a_to_g = 7'b0010010;////0101                  d  
-           6:a_to_g = 7'b0000010;////0110
-           7:a_to_g = 7'b1111000;////0111
-           8:a_to_g = 7'b0000000;////1000
-           9:a_to_g = 7'b0010000;////1001
-           'hA:a_to_g = 7'b0111111; // dash-(g)
-           'hB:a_to_g = 7'b1111111; // all turned off
-           'hC:a_to_g = 7'b1110111;
-           
-           default: a_to_g = 7'b0000000; // U
-   endcase
-   
-   // only one anode is lowered to 0 (active low) to choose the digit
-   always @(*)begin
-       an=4'b1111;
-       an[s] = 0;
-   end
-   
-   //clkdiv counter ticking
-   always @(posedge clk or posedge clr) begin
-       if ( clr == 1)
-           clkdiv <= 0;
-       else
-           clkdiv <= clkdiv+1;
-   end
+    // Decimal point control
+    reg dp_temp;
+    assign dp = dp_temp;
 
+    // Digit selection logic
+    always @(posedge clk or posedge clr) begin
+        if (clr) begin
+            clkdiv <= 20'b0;
+            digit <= 4'b0;
+        end else begin
+            clkdiv <= clkdiv + 1;
+            case (digit_select)
+                2'b00: digit <= x[3:0];     // Rightmost digit
+                2'b01: digit <= x[7:4];
+                2'b10: digit <= 4'b0000;  
+                2'b11: digit <= 4'b0000;
+            endcase
+        end
+    end
 
+    // 7-segment decoder
+    always @(*) begin
+        dp_temp = 1'b1; // Default: DP off
+        case (digit)
+            4'h0: a_to_g = 7'b1000000;  // 0
+            4'h1: a_to_g = 7'b1111001;  // 1
+            4'h2: a_to_g = 7'b0100100;  // 2
+            4'h3: a_to_g = 7'b0110000;  // 3
+            4'h4: a_to_g = 7'b0011001;  // 4
+            4'h5: a_to_g = 7'b0010010;  // 5
+            4'h6: a_to_g = 7'b0000010;  // 6
+            4'h7: a_to_g = 7'b1111000;  // 7
+            4'h8: a_to_g = 7'b0000000;  // 8
+            4'h9: a_to_g = 7'b0010000;  // 9
+            4'hA: a_to_g = 7'b0001000;  // A
+            4'hB: begin a_to_g = 7'b0000000; dp_temp = 1'b0; end // B with DP
+            4'hC: a_to_g = 7'b1000110;  // C
+            4'hD: begin a_to_g = 7'b1000000; dp_temp = 1'b0; end // D with DP
+            4'hE: a_to_g = 7'b0000110;  // E
+            4'hF: a_to_g = 7'b0001110;  // F
+            default: a_to_g = 7'b1111111;  // Turn off if invalid
+        endcase
+    end
+
+    // Anode control (digit enable)
+    always @(*) begin
+        an = 4'b1111;       // Initially disable all digits
+        if (digit_select == 2'b00 || digit_select == 2'b01) begin
+        an[digit_select] = 1'b0; // Enable the selected digit
+        end
+    end
 endmodule
