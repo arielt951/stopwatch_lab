@@ -17,9 +17,10 @@ module Ps2_Interface_tb;
 
     integer errors; // Counter for test failures
     integer k;      // Loop variable
+    localparam integer KEY_COUNT = 17;
     
-    // Array to hold all keys (14 numpad + 2 special = 16 keys)
-    reg [7:0] test_keys [0:15];
+    // Array to hold all keys (14 numpad + 3 special = 17 keys)
+    reg [7:0] test_keys [0:16];
     reg [7:0] current_key;
 
     // Instantiate the UUT (Unit Under Test)
@@ -117,15 +118,15 @@ module Ps2_Interface_tb;
         #100;
 
         // -----------------------------------------------------------
-        // SMART LOOP: Test ALL 16 Keys (Make and Break)
+        // SMART LOOP: Test ALL 17 Keys (Make and Break)
         // -----------------------------------------------------------
         $display("==================================================");
         $display("   STARTING KEY ITERATION TEST (17 KEYS)");
         $display("==================================================");
         
-        for (k = 0; k < 17; k = k + 1) begin
+        for (k = 0; k < KEY_COUNT; k = k + 1) begin
             current_key = test_keys[k];
-            $display("Testing Key [%0d/16] - Scan Code: 0x%h", k, current_key);
+            $display("Testing Key [%0d/%0d] - Scan Code: 0x%h", k + 1, KEY_COUNT, current_key);
             
             // A. Send Make Code
             send_ps2_byte(current_key);
@@ -210,7 +211,7 @@ module Ps2_Interface_tb;
         // Final Verdict
         $display("\n==================================================");
         if (errors == 0) begin
-            $display("   TEST PASSED! All 16 keys and edge cases met.");
+            $display("   TEST PASSED! All 17 keys and edge cases met.");
         end else begin
             $display("   TEST FAILED with %0d errors.", errors);
         end
